@@ -104,25 +104,25 @@ class Pong(TFEnv):
         return new_states, rews, dones
 
     def render(self, states):
-        xs = tf.range(0, self.width)
-        ys = tf.range(0, self.height)
+        xs = tf.expand_dims(tf.range(0, self.width), axis=0)
+        ys = tf.expand_dims(tf.range(0, self.height), axis=0)
         batch = tf.shape(states)[0]
 
         def rectangle_mask(min_x, max_x, min_y, max_y):
-            # Masks are broadcast to [batch x width] and [batch x height].
-            x_mask = tf.cast(tf.logical_and(xs >= min_x, xs < max_x), tf.float32)
-            y_mask = tf.cast(tf.logical_and(ys >= min_y, ys < max_y), tf.float32)
+            x_mask = tf.logical_and(xs >= min_x, xs < max_x)
+            y_mask = tf.logical_and(ys >= min_y, ys < max_y)
 
-            # Use an outer-product to combine the masks.
-            res = tf.matmul(tf.reshape(y_mask, [batch, -1, 1]), tf.reshape(x_mask, [batch, 1, -1]))
+            x_mask = tf.reshape(x_mask, [tf.shape(x_mask)[0], 1, tf.shape(x_mask)[1]])
+            y_mask = tf.reshape(y_mask, [tf.shape(y_mask)[0], tf.shape(y_mask)[1], 1])
 
+            res = tf.logical_and(x_mask, y_mask)
             res = tf.reshape(res, [batch, self.raw_height, self.raw_width])
-            return res >= 0.5
+            return res
 
-        enemy_paddle_y = states[:, 0]
-        player_paddle_y = states[:, 1]
-        ball_x = states[:, 2]
-        ball_y = states[:, 3]
+        enemy_paddle_y = states[:, 0:1]
+        player_paddle_y = states[:, 1:2]
+        ball_x = states[:, 2:3]
+        ball_y = states[:, 3:4]
 
         ball_plane = rectangle_mask(ball_x, ball_x + self.ball_width,
                                     ball_y, ball_y + self.ball_height)
