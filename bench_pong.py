@@ -19,7 +19,7 @@ def main():
     states = tf.placeholder(init_state.dtype, shape=init_state.get_shape())
     actions = tf.random_uniform([BATCH_SIZE], minval=0, maxval=env.num_actions, dtype=tf.int32)
     new_states, rews, dones = env.step(states, actions)
-    image = env.render(states)
+    image = env.observe(states)
     with tf.Session() as sess:
         for render in [False, True]:
             cur_states = sess.run(init_state)

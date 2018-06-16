@@ -103,7 +103,7 @@ class Pong(TFEnv):
         new_states = tf.where(dones, self.reset(tf.shape(states)[0]), new_states)
         return new_states, rews, dones
 
-    def render(self, states):
+    def observe(self, states):
         batch = tf.shape(states)[0]
         xs = tf.tile(tf.expand_dims(tf.range(0, self.width), axis=0), [batch, 1])
         ys = tf.tile(tf.expand_dims(tf.range(0, self.height), axis=0), [batch, 1])

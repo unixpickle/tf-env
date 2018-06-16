@@ -51,15 +51,19 @@ class TFEnv(ABC):
         pass
 
     @abstractmethod
-    def render(self, states):
+    def observe(self, states):
         """
-        Turn a batch of states into a batch of images.
+        Turn states into observations.
+
+        This can be used to implement partially observable
+        environments.
 
         Args:
           states: a batch of environment states.
 
         Returns:
-          A [batch_size x height x width x 3] uint8 Tensor
-            representing the screen images for each state.
+          A batch of observations. For example, for visual
+          environments, this could be a uint8 Tensor of
+           shape [batch_size x height x width x 3].
         """
         pass
