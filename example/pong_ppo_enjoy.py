@@ -5,6 +5,7 @@ Watch a trained PPO agent on the Pong environment.
 import os
 import pickle
 
+from anyrl.envs.wrappers import BatchedFrameStack
 from anyrl.models import CNN
 from anyrl.rollouts import TruncatedRoller
 from anyrl.spaces import gym_space_distribution, gym_space_vectorizer
@@ -17,6 +18,7 @@ def main():
     with tf.Session() as sess:
         print('Creating environment...')
         env = TFBatchedEnv(sess, Pong(), 1)
+        env = BatchedFrameStack(env)
 
         print('Creating model...')
         model = CNN(sess,
@@ -42,7 +44,7 @@ def main():
         viewer = SimpleImageViewer()
         while True:
             for obs in roller.rollouts()[0].step_observations:
-                viewer.imshow(obs)
+                viewer.imshow(obs[..., -3:])
 
 
 if __name__ == '__main__':

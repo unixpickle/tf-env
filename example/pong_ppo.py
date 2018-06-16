@@ -6,6 +6,7 @@ from itertools import count
 import pickle
 
 from anyrl.algos import PPO
+from anyrl.envs.wrappers import BatchedFrameStack
 from anyrl.models import CNN
 from anyrl.rollouts import TruncatedRoller
 from anyrl.spaces import gym_space_distribution, gym_space_vectorizer
@@ -17,6 +18,7 @@ def main():
     with tf.Session() as sess:
         print('Creating environment...')
         env = TFBatchedEnv(sess, Pong(), 8)
+        env = BatchedFrameStack(env)
 
         print('Creating model...')
         model = CNN(sess,
