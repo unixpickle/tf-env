@@ -30,16 +30,16 @@ class Pong(TFEnv):
     """
 
     def __init__(self,
-                 width=160,
-                 height=200,
-                 paddle_width=6,
-                 paddle_height=30,
-                 paddle_margin=10,
+                 width=80,
+                 height=100,
+                 paddle_width=3,
+                 paddle_height=15,
+                 paddle_margin=5,
                  ball_width=2,
                  ball_height=3,
-                 velocity_cap=5,
-                 x_speed=2,
-                 enemy_speed=3):
+                 velocity_cap=3,
+                 x_speed=1,
+                 enemy_speed=2):
         self.raw_width = width
         self.raw_height = height
         self.width = tf.convert_to_tensor(width, dtype=tf.int32)
