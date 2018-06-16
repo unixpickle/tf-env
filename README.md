@@ -24,6 +24,9 @@ Here are the benchmark results for a Tesla K80 GPU:
 | 64             | 24512        | 12664           |
 | 128            | 49239        | 20193           |
 | 256            | 95893        | 30251           |
+| 512            | 196626       | 49544           |
+| 1024           | 371400       | 63665           |
+| 2048           | 723868       | 74534           |
 
 Here are the benchmark results on an old 2.6GHz Core i7. I was surprised to find that increasing the batch size eventually *hurts* performance.
 
