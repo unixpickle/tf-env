@@ -104,32 +104,36 @@ class Pong(TFEnv):
         return new_states, rews, dones
 
     def render(self, states):
-        xs = tf.expand_dims(tf.range(0, self.width), axis=0)
-        ys = tf.expand_dims(tf.range(0, self.height), axis=0)
         batch = tf.shape(states)[0]
+        xs = tf.tile(tf.expand_dims(tf.range(0, self.width), axis=0), [batch, 1])
+        ys = tf.tile(tf.expand_dims(tf.range(0, self.height), axis=0), [batch, 1])
 
         def rectangle_mask(min_x, max_x, min_y, max_y):
+            min_x = tf.tile(min_x, [1, self.raw_width])
+            max_x = tf.tile(max_x, [1, self.raw_width])
+            min_y = tf.tile(min_y, [1, self.raw_height])
+            max_y = tf.tile(max_y, [1, self.raw_height])
+
             x_mask = tf.logical_and(xs >= min_x, xs < max_x)
             y_mask = tf.logical_and(ys >= min_y, ys < max_y)
+            x_mask = tf.reshape(x_mask, [batch, 1, self.raw_width])
+            y_mask = tf.reshape(y_mask, [batch, self.raw_height, 1])
 
-            x_mask = tf.reshape(x_mask, [tf.shape(x_mask)[0], 1, tf.shape(x_mask)[1]])
-            y_mask = tf.reshape(y_mask, [tf.shape(y_mask)[0], tf.shape(y_mask)[1], 1])
-
-            res = tf.logical_and(x_mask, y_mask)
-            res = tf.reshape(res, [batch, self.raw_height, self.raw_width])
-            return res
+            return tf.logical_and(x_mask, y_mask)
 
         enemy_paddle_y = states[:, 0:1]
         player_paddle_y = states[:, 1:2]
         ball_x = states[:, 2:3]
         ball_y = states[:, 3:4]
+        zeros = tf.zeros_like(enemy_paddle_y)
 
         ball_plane = rectangle_mask(ball_x, ball_x + self.ball_width,
                                     ball_y, ball_y + self.ball_height)
-        enemy_plane = rectangle_mask(self.paddle_margin, self.paddle_margin + self.paddle_width,
+        enemy_plane = rectangle_mask(self.paddle_margin + zeros,
+                                     self.paddle_margin + self.paddle_width + zeros,
                                      enemy_paddle_y, enemy_paddle_y + self.paddle_height)
-        player_plane = rectangle_mask(self.width - self.paddle_margin - self.paddle_width,
-                                      self.width - self.paddle_margin,
+        player_plane = rectangle_mask(self.width - self.paddle_margin - self.paddle_width + zeros,
+                                      self.width - self.paddle_margin + zeros,
                                       player_paddle_y, player_paddle_y + self.paddle_height)
 
         res = tf.stack([enemy_plane, ball_plane, player_plane], axis=-1)
