@@ -6,7 +6,7 @@ RL environments implemented in pure TensorFlow graphs.
 
 The pong environment is a proof of concept. It is a re-implementation of the Pong video game in TensorFlow.
 
-<img src="example/pong_gameplay.gif" width="160" height="200">
+![Pong GIF](example/pong_gameplay.gif)
 
 ## Trainability
 
