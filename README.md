@@ -4,9 +4,9 @@ RL environments implemented in pure TensorFlow graphs.
 
 # Pong environment
 
-The pong environment is a proof of concept re-implementation of the Pong video game in TensorFlow.
+The pong environment is a proof of concept. It is a re-implementation of the Pong video game in TensorFlow.
 
-![Pong GIF](example/pong_gameplay.gif)
+<img src="example/pong_gameplay.gif" width="160" height="200">
 
 ## Trainability
 
@@ -23,7 +23,7 @@ fps is 6087.651217 with render=False
 fps is 3734.036180 with render=True
 ```
 
-Here are the benchmark results on an old, 2.6GHz Core i7:
+Here are the benchmark results on an old 2.6GHz Core i7:
 
 ```
 fps is 22324.623265 with render=False
