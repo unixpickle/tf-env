@@ -9,7 +9,6 @@ import tensorflow as tf
 from tf_env import Pong
 
 
-BATCH_SIZE = 16
 NUM_STEPS = 512
 
 
@@ -21,16 +20,17 @@ def main():
     new_states, rews, dones = env.step(states, actions)
     image = env.observe(states)
     with tf.Session() as sess:
-        for render in [False, True]:
-            cur_states = sess.run(init_state)
-            start_time = time.time()
-            for _ in range(NUM_STEPS):
-                cur_states, cur_rews, cur_dones = sess.run([new_states, rews, dones],
-                                                           feed_dict={states: cur_states})
-                if render:
-                    sess.run(image, feed_dict={states: cur_states})
-            fps = NUM_STEPS * BATCH_SIZE / (time.time() - start_time)
-            print('fps is %f with render=%s' % (fps, render))
+        for batch_size in [2 ** i for i in range(10)]:
+            for render in [False, True]:
+                cur_states = sess.run(init_state)
+                start_time = time.time()
+                for _ in range(NUM_STEPS):
+                    cur_states, cur_rews, cur_dones = sess.run([new_states, rews, dones],
+                                                               feed_dict={states: cur_states})
+                    if render:
+                        sess.run(image, feed_dict={states: cur_states})
+                fps = NUM_STEPS * BATCH_SIZE / (time.time() - start_time)
+                print('fps is %f with render=%s batch=%d' % (fps, render, batch_size))
 
 
 if __name__ == '__main__':
