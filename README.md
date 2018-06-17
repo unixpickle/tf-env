@@ -14,7 +14,7 @@ The script [example/pong_ppo.py](example/pong_ppo.py) trains an agent on the Pon
 
 ## Performance
 
-The script [example/pong_bench.py](example/pong_bench.py) measures the FPS of the Pong environment. As an experiment, I ran the same benchmark for different batch sizes, and found that increasing the batch size on GPUs gives much more speedup than on GPUs. In fact, a Tesla K80 can easily run the environment 30x faster than a consumer-grade CPU.
+The script [example/pong_bench.py](example/pong_bench.py) measures the FPS of the Pong environment. As an experiment, I ran the same benchmark for different batch sizes, and found that increasing the batch size on GPUs gives much more speedup than on CPUs. In fact, a Tesla K80 can easily run the environment 30x faster than a consumer-grade CPU.
 
 Here are the benchmark results for a Tesla K80 GPU:
 
