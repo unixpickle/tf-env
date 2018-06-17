@@ -25,7 +25,7 @@ class Pong(TFEnv):
 
     The game coordinate system works as follows:
       The top left of the screen is (0, 0).
-      Moving to the left advances by (1, 0).
+      Moving to the right advances by (1, 0).
       Moving down advances by (0, 1).
     """
 
