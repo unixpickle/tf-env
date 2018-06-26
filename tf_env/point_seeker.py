@@ -1,0 +1,134 @@
+"""
+A gridworld environment where the agent has to reach cells
+before the end of an episode.
+"""
+
+import tensorflow as tf
+
+from .base import TFEnv
+from .util import bcast_where, excluded_random
+
+
+class PointSeeker(TFEnv):
+    """
+    A batched "point seeker" environment.
+
+    Observations are continuous x,y positions for both the
+    player and the target.
+    However, there is also an observe_visual() method that
+    produces a rendering of the gridworld.
+
+    The action space is [UP, DOWN, LEFT, RIGHT].
+
+    The state contains the following signed integers:
+     - current X
+     - current Y
+     - goal X
+     - goal Y
+     - steps remaining
+
+    The coordinate system works the same way as for Pong.
+    """
+
+    def __init__(self,
+                 width=10,
+                 height=10,
+                 timestep_limit=64):
+        self.width = tf.convert_to_tensor(width, dtype=tf.int32)
+        self.height = tf.convert_to_tensor(height, dtype=tf.int32)
+        self.timestep_limit = tf.convert_to_tensor(timestep_limit, dtype=tf.int32)
+
+    @property
+    def num_actions(self):
+        return 4
+
+    def reset(self, batch_size):
+        player_pos = tf.random_uniform(shape=[batch_size, 2],
+                                       minval=0,
+                                       maxval=self.width - 1,
+                                       dtype=tf.int32)
+        num_cells = tf.cast(self.width * self.height, tf.float32)
+        same_x_prob = tf.cast(self.height - 1, tf.float32) / num_cells
+        same_x = tf.random_uniform([batch_size]) < same_x_prob
+        goal_x = tf.where(same_x,
+                          player_pos[:, 0],
+                          excluded_random(batch_size, self.width, player_pos[:, 0]))
+        goal_y = tf.where(same_x,
+                          excluded_random(batch_size, self.height, player_pos[:, 1]),
+                          tf.random_uniform(shape=[batch_size],
+                                            minval=0,
+                                            maxval=self.height - 1,
+                                            dtype=tf.int32))
+        goal_pos = tf.stack([goal_x, goal_y], axis=-1)
+        steps_remaining = tf.zeros([batch_size, 1], dtype=tf.int32) + self.timestep_limit
+        return tf.concat([player_pos, goal_pos, steps_remaining], axis=-1)
+
+    def step(self, states, actions):
+        player_x = states[:, 0]
+        player_y = states[:, 1]
+        goal_x = states[:, 2]
+        goal_y = states[:, 3]
+        steps_remaining = states[:, 4]
+
+        positives = tf.ones_like(player_x)
+        negatives = tf.negative(positives)
+        zeros = tf.zeros_like(positives)
+        x_delta = tf.where(tf.equal(actions, 2),
+                           negatives,
+                           tf.where(tf.equal(actions, 3),
+                                    positives,
+                                    zeros))
+        y_delta = tf.where(tf.equal(actions, 0),
+                           negatives,
+                           tf.where(tf.equal(actions, 1),
+                                    positives,
+                                    zeros))
+
+        player_x = wrapped_add(player_x, x_delta, self.width)
+        player_y = wrapped_add(player_y, y_delta, self.height)
+        steps_remaining = steps_remaining - 1
+
+        new_states = tf.stack([player_x, player_y, goal_x, goal_y, steps_remaining], axis=-1)
+
+        at_goals = tf.logical_and(tf.equal(player_x, goal_x), tf.equal(player_y, goal_y))
+        dones = tf.logical_or(steps_remaining <= 0, at_goals)
+        rews = tf.cast(at_goals, tf.float32)
+
+        return tf.where(dones, self.reset(tf.shape(states)[0]), new_states), rews, dones
+
+    def observe(self, states):
+        states = tf.cast(states, tf.float32)
+        width = tf.cast(self.width, tf.float32)
+        height = tf.cast(self.height, tf.float32)
+        player_x = states[:, 0] / width
+        player_y = states[:, 1] / height
+        goal_x = states[:, 2] / width
+        goal_y = states[:, 3] / height
+        steps_remaining = states[:, 4] / tf.cast(self.timestep_limit, tf.float32)
+        return tf.stack([player_x, player_y, goal_x, goal_y, steps_remaining], axis=-1)
+
+    def observe_visual(self, states):
+        batch = tf.shape(states)[0]
+        xs = tf.tile(tf.expand_dims(tf.range(0, self.width), axis=0), [batch, 1])
+        ys = tf.tile(tf.expand_dims(tf.range(0, self.height), axis=0), [batch, 1])
+
+        def point_mask(x, y):
+            x = tf.reshape(x, [batch, 1])
+            y = tf.reshape(y, [batch, 1])
+            x_mask = tf.reshape(tf.equal(x, xs), [batch, 1, self.width])
+            y_mask = tf.reshape(tf.equal(y, ys), [batch, self.height, 1])
+            return tf.logical_and(x_mask, y_mask)
+
+        player_mask = point_mask(states[:, 0], states[:, 1])
+        goal_mask = point_mask(states[:, 2], states[:, 3])
+        stacked = tf.stack([player_mask, tf.zeros_like(player_mask), goal_mask], axis=-1)
+        return tf.cast(stacked, tf.uint8) * tf.constant(255, dtype=tf.uint8)
+
+
+def wrapped_add(vectors, values, maxval):
+    sums = tf.add(vectors, values)
+    return bcast_where(sums < 0,
+                       maxval - 1,
+                       tf.where(sums >= maxval,
+                                tf.zeros_like(sums),
+                                sums))

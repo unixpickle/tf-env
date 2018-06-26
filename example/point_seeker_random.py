@@ -1,5 +1,5 @@
 """
-Watch random agent play Pong.
+Watch random agent play PointSeeker.
 """
 
 import time
@@ -7,16 +7,16 @@ import time
 from gym.envs.classic_control.rendering import SimpleImageViewer
 import tensorflow as tf
 
-from tf_env import Pong
+from tf_env import PointSeeker
 
 
 def main():
-    env = Pong()
+    env = PointSeeker()
     init_state = env.reset(1)
     states = tf.placeholder(init_state.dtype, shape=init_state.get_shape())
     actions = tf.random_uniform(shape=[1], minval=0, maxval=env.num_actions, dtype=tf.int32)
     new_states, rews, dones = env.step(states, actions)
-    image = env.observe(states)
+    image = env.observe_visual(states)
     viewer = SimpleImageViewer()
     with tf.Session() as sess:
         cur_states = sess.run(init_state)
@@ -27,7 +27,7 @@ def main():
             viewer.imshow(cur_image[0])
             if cur_dones[0]:
                 print('done with reward: %f' % cur_rews[0])
-            time.sleep(1.0 / 60)
+            time.sleep(1.0 / 10)
 
 
 if __name__ == '__main__':
