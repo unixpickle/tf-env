@@ -33,10 +33,12 @@ class PointSeeker(TFEnv):
     def __init__(self,
                  width=10,
                  height=10,
-                 timestep_limit=64):
+                 timestep_limit=64,
+                 reward_decay=0.99):
         self.width = tf.convert_to_tensor(width, dtype=tf.int32)
         self.height = tf.convert_to_tensor(height, dtype=tf.int32)
         self.timestep_limit = tf.convert_to_tensor(timestep_limit, dtype=tf.int32)
+        self.reward_decay = tf.convert_to_tensor(reward_decay, dtype=tf.float32)
 
     @property
     def num_actions(self):
@@ -92,7 +94,7 @@ class PointSeeker(TFEnv):
 
         at_goals = tf.logical_and(tf.equal(player_x, goal_x), tf.equal(player_y, goal_y))
         dones = tf.logical_or(steps_remaining <= 0, at_goals)
-        rews = tf.cast(at_goals, tf.float32)
+        rews = self._rewards(at_goals, steps_remaining)
 
         return tf.where(dones, self.reset(tf.shape(states)[0]), new_states), rews, dones
 
@@ -123,6 +125,12 @@ class PointSeeker(TFEnv):
         goal_mask = point_mask(states[:, 2], states[:, 3])
         stacked = tf.stack([player_mask, tf.zeros_like(player_mask), goal_mask], axis=-1)
         return tf.cast(stacked, tf.uint8) * tf.constant(255, dtype=tf.uint8)
+
+    def _rewards(self, at_goals, steps_remaining):
+        rews = tf.cast(at_goals, tf.float32)
+        steps_taken = tf.cast(self.timestep_limit - steps_remaining, tf.float32)
+        decays = tf.exp(steps_taken * tf.log(self.reward_decay))
+        return decays * rews
 
 
 def wrapped_add(vectors, values, maxval):
