@@ -18,7 +18,9 @@ class PointSeeker(TFEnv):
     However, there is also an observe_visual() method that
     produces a rendering of the gridworld.
 
-    The action space is [UP, DOWN, LEFT, RIGHT].
+    The action space is either [UP, DOWN, LEFT, RIGHT] or
+    [NOP, UP, DOWN, LEFT, RIGHT] depending on whether or
+    not no-ops are enabled.
 
     The state contains the following signed integers:
      - current X
@@ -34,14 +36,18 @@ class PointSeeker(TFEnv):
                  width=10,
                  height=10,
                  timestep_limit=64,
-                 reward_decay=0.99):
+                 reward_decay=0.99,
+                 nops=False):
         self.width = tf.convert_to_tensor(width, dtype=tf.int32)
         self.height = tf.convert_to_tensor(height, dtype=tf.int32)
         self.timestep_limit = tf.convert_to_tensor(timestep_limit, dtype=tf.int32)
         self.reward_decay = tf.convert_to_tensor(reward_decay, dtype=tf.float32)
+        self.nops = nops
 
     @property
     def num_actions(self):
+        if self.nops:
+            return 5
         return 4
 
     def reset(self, batch_size):
@@ -72,19 +78,7 @@ class PointSeeker(TFEnv):
         goal_y = states[:, 3]
         steps_remaining = states[:, 4]
 
-        positives = tf.ones_like(player_x)
-        negatives = tf.negative(positives)
-        zeros = tf.zeros_like(positives)
-        x_delta = tf.where(tf.equal(actions, 2),
-                           negatives,
-                           tf.where(tf.equal(actions, 3),
-                                    positives,
-                                    zeros))
-        y_delta = tf.where(tf.equal(actions, 0),
-                           negatives,
-                           tf.where(tf.equal(actions, 1),
-                                    positives,
-                                    zeros))
+        x_delta, y_delta = self._action_deltas(actions)
 
         player_x = wrapped_add(player_x, x_delta, self.width)
         player_y = wrapped_add(player_y, y_delta, self.height)
@@ -131,6 +125,31 @@ class PointSeeker(TFEnv):
         steps_taken = tf.cast(self.timestep_limit - steps_remaining, tf.float32)
         decays = tf.exp(steps_taken * tf.log(self.reward_decay))
         return decays * rews
+
+    def _action_deltas(self, actions):
+        up = 0
+        down = 1
+        left = 2
+        right = 3
+        if self.nops:
+            up += 1
+            down += 1
+            left += 1
+            right += 1
+        positives = tf.ones(tf.shape(actions), dtype=tf.int32)
+        negatives = tf.negative(positives)
+        zeros = tf.zeros_like(positives)
+        x_delta = tf.where(tf.equal(actions, left),
+                           negatives,
+                           tf.where(tf.equal(actions, right),
+                                    positives,
+                                    zeros))
+        y_delta = tf.where(tf.equal(actions, up),
+                           negatives,
+                           tf.where(tf.equal(actions, down),
+                                    positives,
+                                    zeros))
+        return x_delta, y_delta
 
 
 def wrapped_add(vectors, values, maxval):
