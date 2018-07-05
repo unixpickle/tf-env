@@ -139,6 +139,9 @@ class Pong(TFEnv):
         res = tf.stack([enemy_plane, ball_plane, player_plane], axis=-1)
         return tf.cast(res, tf.uint8) * tf.constant(255, dtype=tf.uint8)
 
+    def observe_visual(self, states):
+        return self.observe(states)
+
     def _apply_player_action(self, vels, actions):
         nops = tf.equal(actions, 0)
         ups = tf.equal(actions, 1)

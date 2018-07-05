@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name='tf-env',
-    version='0.0.3',
+    version='0.1.0',
     description='RL environments for TensorFlow.',
     url='https://github.com/unixpickle/tf-env',
     author='Alex Nichol',

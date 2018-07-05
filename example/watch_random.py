@@ -8,17 +8,15 @@ from gym.envs.classic_control.rendering import SimpleImageViewer
 import tensorflow as tf
 
 
-def watch_random(env, observe_fn=None, frame_rate=60.0):
+def watch_random(env, frame_rate=60.0):
     """
     Watch random agent play an environment.
     """
-    if observe_fn is None:
-        observe_fn = env.observe
     init_state = env.reset(1)
     states = tf.placeholder(init_state.dtype, shape=init_state.get_shape())
     actions = tf.random_uniform(shape=[1], minval=0, maxval=env.num_actions, dtype=tf.int32)
     new_states, rews, dones = env.step(states, actions)
-    image = observe_fn(states)
+    image = env.observe_visual(states)
     viewer = SimpleImageViewer()
     with tf.Session() as sess:
         cur_states = sess.run(init_state)

@@ -67,3 +67,12 @@ class TFEnv(ABC):
            shape [batch_size x height x width x 3].
         """
         pass
+
+    @abstractmethod
+    def observe_visual(self, states):
+        """
+        Like observe(), but always produces a visual
+        observation, which is of shape [batch x h x w x 3]
+        and dtype uint8.
+        """
+        pass
